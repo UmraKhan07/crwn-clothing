@@ -1,6 +1,7 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from 'firebase/app';
-import { getFirestore} from 'firebase/firestore/lite';
+import { getFirestore} from 'firebase/firestore';
+import { collection, doc, getDoc, setDoc } from "firebase/firestore";
 import { getAuth, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
 // import firebase from 'firebase/app';
 // import 'firebase/firestore';
@@ -20,11 +21,36 @@ const firebaseConfig = {
   measurementId: "G-6PEK2KB53N"
 };
 
+export const createUserProfileDocument = async (userAuth, additionalData) => {
+  if(!userAuth) return;
+  const userRef = doc(db, "users", `${userAuth.uid}`);
+  const setRef = collection(db, "users");
+
+  const snapShot = await getDoc(userRef);
+   
+  if(!snapShot.exists()) {
+    const { displayName, email} = userAuth;
+    const createdAt = new Date();
+
+    try {
+      await setDoc(doc(setRef, `${userAuth.uid}`),{
+        displayName,
+        email,
+        createdAt,
+        ...additionalData
+      });
+    } catch (error) {
+    console.log('error creating user', error.message);
+  }
+}
+return userRef;
+}
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 //const analytics = getAnalytics(app);
 export const auth = getAuth();
-export const db = getFirestore(app);
+export const db = getFirestore();
+// export const db = getFirestore(app);
 
 const provider = new GoogleAuthProvider();
 provider.setCustomParameters({ prompt: 'select_account' });
